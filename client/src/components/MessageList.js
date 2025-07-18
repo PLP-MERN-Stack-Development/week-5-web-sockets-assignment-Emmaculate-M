@@ -1,8 +1,16 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { socket } from "../socket";
 
 
 function MessageList({ messages, currentUser }) {
+  useEffect(() => {
+    messages.forEach((msg) => {
+      if (msg.sender !== currentUser && !msg.readBy?.includes(socket.id)) {
+        socket.emit("read_message", msg.id);
+      }
+    });
+  }, [messages, currentUser]);
+
   const handleReaction = (messageId, reaction) => {
     socket.emit("add_reaction", { messageId, reaction });
   };
@@ -70,6 +78,13 @@ function MessageList({ messages, currentUser }) {
                     {r.reaction} ({r.user})
                   </span>
                 ))}
+              </div>
+            )}
+
+            {/* [UPDATED] Read Receipts */}
+            {isOwnMessage && msg.readBy && msg.readBy.length > 1 && (
+              <div className="text-xs text-gray-400 mt-1">
+                Seen by {msg.readBy.length - 1} other{msg.readBy.length - 1 > 1 ? "s" : ""}
               </div>
             )}
           </div>
