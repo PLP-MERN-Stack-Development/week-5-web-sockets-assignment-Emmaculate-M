@@ -1,7 +1,3 @@
-# Real-time Chat Application
-
-A fully functional real-time chat app built with React and Socket.io featuring rooms, file sharing, typing indicators, reactions (one reaction per user per message), and read receipts. This README guides you step-by-step through how it works and how to set it up.
-
 # Real-Time Chat Application
 
 A fully functional real-time chat app built with React and Socket.io featuring rooms, file sharing, typing indicators, reactions (one reaction per user per message), and read receipts.
@@ -101,114 +97,45 @@ All state is managed with React hooks, and socket events sync the real-time stat
 | `read_receipt`    | Server → Client | Broadcast read receipt updates            |
 
 
-## Features
-
-- User join with username and room selection
-- Real-time messaging with timestamps and sender info
-- File attachment support
-- Typing indicators showing who is typing
-- Reactions on messages (one reaction per user per message)
-- Read receipts to show who read which message
-- Multiple rooms support with room switching
-- Persistent message history loading
-
----
-
-## Setup and Running
-
-### Backend (Server)
-
-1. Install dependencies:
-   ```bash
-   npm install express socket.io cors dotenv
-   ```
-
-2. Run the server:
-   ```bash
-   node server/server.js
-   ```
-   Server runs on port 5000 by default or as configured in `.env`.
-
-### Frontend (Client)
-
-1. Install dependencies:
-   ```bash
-   npm install react react-dom socket.io-client
-   ```
-
-2. Start the React app:
-   ```bash
-   npm start
-   ```
-   Runs on port 3000 by default.
-
----
-
-## How it Works
-
-### Socket Connection
-
-- On component mount, the client connects to the socket server, joining a room with a username.
-- Server tracks users, rooms, and messages in-memory.
-- Messages are emitted and broadcast to room members.
-
-### Sending Messages
-
-- Messages can be text or include files.
-- On send, client emits `send_message` with the message content.
-- Server timestamps and stores messages, then broadcasts with sender info.
-
-### Typing Indicator
-
-- When a user types, client emits `typing` with true/false.
-- Server tracks who is typing per room and broadcasts typing users.
-
-### Reactions
-
-- Users can react to messages with emojis.
-- Each user can only react once per message.
-- Reactions are stored on the message and broadcast to the room.
-
-### Read Receipts
-
-- When a message is read, client emits `read_message` with message ID.
-- Server updates read status and broadcasts read receipts.
-
-### Room Switching
-
-- Users can select different rooms.
-- On room change, client disconnects and reconnects to new room.
-- Message history and users are loaded for the new room.
-
----
-
-## File Structure Overview
+## Project Structure
 
 - `/server/server.js`: Express + Socket.io backend server code
+Manages users, rooms, messages, reactions, and read receipts in-memory.
 - `/src/components/Chat.js`: Main chat component, handles input and displays UI
 - `/src/components/MessageList.js`: Renders chat messages and reactions
 - `/src/components/UserList.js`: Shows users in the room
 - `/src/components/TypingIndicator.js`: Shows who is typing
-- `/src/hooks/useSocket.js`: Custom hook for socket connection, events, and state
-- `/src/socket.js`: Socket.io client setup
+- `/src/socket.js`: Custom hook for socket connection, events, and state &
+Socket.io client setup
 - `.env`: Config file for server URL and ports
 
----
 
-## ESLint Warnings Fixes
+## Usage Guide
+- Open the app in your browser.
 
-- Added missing dependencies in React useEffect hooks.
-- Removed unused variables.
-- Used `useCallback` to memoize handlers.
+- Enter a username and a room name (or select from existing rooms).
 
----
+- Send text messages or upload files using the chat interface.
 
-## Notes
+- React to any message by clicking on emoji buttons shown below each message (only one reaction per user per message).
 
-- The app currently stores messages in server memory; for production use, integrate with a database.
-- File sharing uses base64 encoding; consider optimizing for larger files.
-- Reaction UX can be enhanced with animations or better UI.
+- Watch typing indicators when others are typing.
 
----
+- See which users are currently in the room.
 
-Feel free to open issues or contribute improvements!
+- Read receipts update to show who has read each message.
+
+- Switch rooms anytime to chat with different groups.
+
+## Known Limitations & Future Work
+*Persistence:* Messages, reactions, and read receipts are stored only in memory — they will reset when the server restarts. Adding a database would fix this.
+
+*Reactions UI:* Current emoji buttons are basic; an emoji picker and clearer user reaction indicators are planned.
+
+*File previews:* Currently files can be downloaded but previews could be improved.
+
+*User Authentication:* No login or persistent identity, which can be added later for privacy and security.
+
+*Performance:* Large rooms and message histories might need pagination and optimization.
+
+This is still work in progress. We'll keep improving as learn afresh.
