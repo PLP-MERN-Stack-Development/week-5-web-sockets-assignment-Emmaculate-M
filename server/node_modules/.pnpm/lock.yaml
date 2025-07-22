@@ -14,13 +14,13 @@ importers:
       express:
         specifier: ^4.21.2
         version: 4.21.2
+      mongoose:
+        specifier: ^8.16.4
+        version: 8.16.4
       socket.io:
         specifier: ^4.8.1
         version: 4.8.1
     devDependencies:
-      mongoose:
-        specifier: ^8.16.4
-        version: 8.16.4
       nodemon:
         specifier: ^3.0.0
         version: 3.1.10
