@@ -169,5 +169,5 @@ app.get('/api/messages/:room', (req, res) => {
   res.json(paginated);
 });
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT;
+server.listen(PORT, () => console.log(`Server listening on ${PORT}`));
