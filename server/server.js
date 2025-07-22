@@ -1,6 +1,7 @@
 // server/server.js
 
 const express = require('express');
+const mongoose = require("mongoose");
 const http = require('http');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -10,6 +11,14 @@ const path = require('path');
 dotenv.config();
 
 const app = express();
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('Connected to MongoDB Atlas'))
+.catch((err) => console.error('MongoDB connection error:', err));
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
