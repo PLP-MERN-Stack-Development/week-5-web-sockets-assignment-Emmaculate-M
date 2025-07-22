@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 import { useEffect, useState,useCallback } from 'react';
 
 // Socket.io connection URL
-const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', {
+const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://my-chatapp-backend-aphc.onrender.com', {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
