@@ -4,7 +4,6 @@
 cd server
 
 # (Optional) Run build if you ever add a build script
-pnpm run build || echo "No build step defined, continuing..."
+pnpm run build || echo "No build step defined"
 
-# Start the server
-pnpm start
+echo "Build completed"
