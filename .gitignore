@@ -27,3 +27,4 @@ client/.env.production.local
 Thumbs.db
 
 *.log
+.vercel
