@@ -158,17 +158,6 @@ io.on('connection', (socket) => {
   });
 });
 
-  socket.on('disconnect', (reason) => {
-  const user = users[socket.id];
-  if (!user) return;
-  delete users[socket.id];
-  delete typing[socket.room]?.[socket.id];
-  socket.to(socket.room).emit('user_left', { username: user.username, id: socket.id });
-  io.to(socket.room).emit('user_list', getUsersInRoom(socket.room));
-  console.log(`User disconnected: ${socket.id}, Reason: ${reason}`);
-});
-
-
 // REST endpoint
 app.get('/api/messages/:room', (req, res) => {
   const room = req.params.room || 'global';
