@@ -10,6 +10,12 @@ dotenv.config();
 
 const app = express();
 
+// Add a default root route to stop Render refresh loop
+app.get('/', (req, res) => {
+  res.send('ChatApp backend is running');
+});
+
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -27,7 +33,7 @@ const io = new Server(server, {
       'http://localhost:3000',
       'https://my-chatapp01-frontend.vercel.app/'
     ],
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true,
   },
    pingInterval: 25000,  

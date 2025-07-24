@@ -9,7 +9,7 @@ let socket;
 const createSocket = () => {
   return io(process.env.REACT_APP_SOCKET_URL || 'https://my-chatapp-backend-aphc.onrender.com', {
     autoConnect: false,
-    transports: ['websocket'],
+    transports: ['polling', 'websocket'],
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
@@ -89,6 +89,12 @@ export function useSocket() {
     };
     const onTypingUsers = (typingUsersList) => setTypingUsers(typingUsersList);
 
+    // Debug: log connection attempts and failures
+    console.log("Connecting to:", process.env.REACT_APP_SOCKET_URL);
+    socket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err.message);
+    });
+
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('receive_message', onReceiveMessage);
@@ -109,6 +115,7 @@ export function useSocket() {
       socket.off('user_joined', onUserJoined);
       socket.off('user_left', onUserLeft);
       socket.off('typing_users', onTypingUsers);
+      socket.off('connect_error');
     };
   }, []);
 
