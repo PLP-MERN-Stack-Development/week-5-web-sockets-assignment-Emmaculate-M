@@ -1,5 +1,3 @@
-// server/server.js
-
 const express = require('express');
 const mongoose = require("mongoose");
 const http = require('http');
@@ -11,6 +9,7 @@ const path = require('path');
 dotenv.config();
 
 const app = express();
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -19,57 +18,63 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('Connected to MongoDB Atlas'))
 .catch((err) => console.error('MongoDB connection error:', err));
 
+// Setup server and socket
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000', // <-- fix here
+    origin: [
+      process.env.CLIENT_URL,
+      'http://localhost:3000',
+      'https://my-chatapp01-frontend-ff45ejhdg-emmaculates-projects.vercel.app'
+    ],
     methods: ['GET', 'POST'],
     credentials: true,
   },
 });
 
+// Enable CORS for API routes
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: [
+    process.env.CLIENT_URL,
+    'http://localhost:3000',
+    'https://my-chatapp01-frontend-ff45ejhdg-emmaculates-projects.vercel.app'
+  ],
   credentials: true,
 }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// In-memory storage
 const users = {};
-const messages = {}; // room: [messages]
+const messages = {};
 const typing = {};
-const readReceipts = {}; // userId: messageIds
+const readReceipts = {};
 
-// Utility to send messages paginated
 function getPaginatedMessages(room, offset = 0, limit = 20) {
   const roomMessages = messages[room] || [];
   return roomMessages.slice(-offset - limit, -offset || undefined);
 }
 
 function getUsersInRoom(room) {
-  return Object.values(users).filter((u) => u.room === room);
+  return Object.values(users).filter(u => u.room === room);
 }
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Join user to global room or custom room
   socket.on('user_join', ({ username, room }) => {
     if (!username) return;
+
     socket.username = username;
     socket.room = room || 'global';
     users[socket.id] = { id: socket.id, username, room: socket.room };
     socket.join(socket.room);
 
-    // Notify others
     socket.to(socket.room).emit('user_joined', users[socket.id]);
     io.to(socket.room).emit('user_list', getUsersInRoom(socket.room));
-
-    // Send chat history
     socket.emit('message_history', getPaginatedMessages(socket.room));
   });
 
-  // Handle messages - content is an object { message, file? }
   socket.on('send_message', (data, ack) => {
     if (!messages[socket.room]) messages[socket.room] = [];
 
@@ -77,25 +82,22 @@ io.on('connection', (socket) => {
       id: Date.now(),
       sender: socket.username,
       senderId: socket.id,
-      content: data.content || '', // message text
+      content: data.content || '',
       room: socket.room,
       timestamp: new Date().toISOString(),
       reactions: [],
       readBy: [socket.id],
-      file: data.file || null,  // optional file info
+      file: data.file || null,
     };
 
     messages[socket.room].push(message);
-
     io.to(socket.room).emit('receive_message', message);
-
     if (ack) ack({ status: 'delivered', messageId: message.id });
   });
 
-  // Read receipt
   socket.on('read_message', (messageId) => {
     for (const room in messages) {
-      messages[room].forEach((m) => {
+      messages[room].forEach(m => {
         if (m.id === messageId && !m.readBy.includes(socket.id)) {
           m.readBy.push(socket.id);
         }
@@ -104,7 +106,6 @@ io.on('connection', (socket) => {
     io.to(socket.room).emit('read_receipt', { messageId, userId: socket.id });
   });
 
-  // Typing indicator
   socket.on('typing', (isTyping) => {
     typing[socket.room] = typing[socket.room] || {};
     if (isTyping) {
@@ -115,7 +116,6 @@ io.on('connection', (socket) => {
     io.to(socket.room).emit('typing_users', Object.values(typing[socket.room]));
   });
 
-  // File sharing
   socket.on('share_file', (fileInfo) => {
     if (!messages[socket.room]) messages[socket.room] = [];
 
@@ -130,26 +130,22 @@ io.on('connection', (socket) => {
     io.to(socket.room).emit('receive_message', message);
   });
 
-  // Reactions
-    socket.on('add_reaction', ({ messageId, reaction }) => {
-      const roomMessages = messages[socket.room] || [];
-      for (const msg of roomMessages) {
-        if (msg.id === messageId) {
-          // Check if user already reacted
-      const existingReactionIndex = msg.reactions.findIndex(r => r.user === socket.username);
-      if (existingReactionIndex !== -1) {
-        // Update existing reaction
-        msg.reactions[existingReactionIndex].reaction = reaction;
-      } else {
-        msg.reactions.push({ user: socket.username, reaction });
+  socket.on('add_reaction', ({ messageId, reaction }) => {
+    const roomMessages = messages[socket.room] || [];
+    for (const msg of roomMessages) {
+      if (msg.id === messageId) {
+        const existing = msg.reactions.findIndex(r => r.user === socket.username);
+        if (existing !== -1) {
+          msg.reactions[existing].reaction = reaction;
+        } else {
+          msg.reactions.push({ user: socket.username, reaction });
+        }
+        io.to(socket.room).emit('reaction_added', { messageId, reactions: msg.reactions });
+        break;
       }
-      io.to(socket.room).emit('reaction_added', { messageId, reactions: msg.reactions });
-      break;
-    }
     }
   });
 
-  // Disconnect
   socket.on('disconnect', () => {
     const user = users[socket.id];
     if (!user) return;
@@ -160,7 +156,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// API for message history
+// REST endpoint
 app.get('/api/messages/:room', (req, res) => {
   const room = req.params.room || 'global';
   const offset = parseInt(req.query.offset || 0);
@@ -169,5 +165,9 @@ app.get('/api/messages/:room', (req, res) => {
   res.json(paginated);
 });
 
-const PORT = process.env.PORT;
-server.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+// Start server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`CORS allowed for:`, process.env.CLIENT_URL);
+});
