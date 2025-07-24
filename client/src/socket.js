@@ -1,15 +1,23 @@
-// socket.js - Socket.io client setup
+// socket.js - Updated Socket.io client setup
 
+import { useEffect, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
-import { useEffect, useState,useCallback } from 'react';
 
-// Socket.io connection URL
-const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://my-chatapp-backend-aphc.onrender.com', {
-  autoConnect: false,
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-});
+// Create a socket instance in a function (to avoid stale/duplicate connections)
+let socket;
+
+const createSocket = () => {
+  return io(process.env.REACT_APP_SOCKET_URL || 'https://my-chatapp-backend-aphc.onrender.com', {
+    autoConnect: false,
+    transports: ['websocket'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    withCredentials: true,
+  });
+};
+
+socket = createSocket();
 
 // Custom hook to use socket
 export function useSocket() {
@@ -19,14 +27,12 @@ export function useSocket() {
   const [users, setUsers] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
 
-  // Connect to socket server
   const connect = useCallback((username, room) => {
     if (!username || !room) return;
-    socket.connect();
+    if (!socket.connected) socket.connect();
     socket.emit('user_join', { username, room });
   }, []);
 
-  // Disconnect from socket server
   const disconnect = useCallback(() => {
     socket.disconnect();
     setMessages([]);
@@ -34,56 +40,32 @@ export function useSocket() {
     setTypingUsers([]);
   }, []);
 
-  // Send a message
   const sendMessage = useCallback((content) => {
-  socket.emit('send_message', content);
-}, []);
+    socket.emit('send_message', content);
+  }, []);
 
-
-  // Send a private message
   const sendPrivateMessage = useCallback((to, message) => {
     socket.emit('private_message', { to, message });
   }, []);
 
-  // Set typing status
   const setTyping = useCallback((isTyping) => {
     socket.emit('typing', isTyping);
   }, []);
 
-  // Socket event listeners
   useEffect(() => {
-    // Connection events
-    const onConnect = () => {
-      setIsConnected(true);
-    };
-
-    const onDisconnect = () => {
-      setIsConnected(false);
-    };
-
-    // Message events
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
     const onReceiveMessage = (message) => {
       setLastMessage(message);
       setMessages((prev) => [...prev, message]);
     };
-
     const onPrivateMessage = (message) => {
       setLastMessage(message);
       setMessages((prev) => [...prev, message]);
     };
-
-    // Message history
-    const onMessageHistory = (history) => {
-      setMessages(history);
-    };
-
-    // User events
-    const onUserList = (userList) => {
-      setUsers(userList);
-    };
-
+    const onMessageHistory = (history) => setMessages(history);
+    const onUserList = (userList) => setUsers(userList);
     const onUserJoined = (user) => {
-      // You could add a system message here
       setMessages((prev) => [
         ...prev,
         {
@@ -94,9 +76,7 @@ export function useSocket() {
         },
       ]);
     };
-
     const onUserLeft = (user) => {
-      // You could add a system message here
       setMessages((prev) => [
         ...prev,
         {
@@ -107,13 +87,8 @@ export function useSocket() {
         },
       ]);
     };
+    const onTypingUsers = (typingUsersList) => setTypingUsers(typingUsersList);
 
-    // Typing events
-    const onTypingUsers = (typingUsersList) => {
-      setTypingUsers(typingUsersList);
-    };
-
-    // Register event listeners
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('receive_message', onReceiveMessage);
@@ -124,7 +99,6 @@ export function useSocket() {
     socket.on('user_left', onUserLeft);
     socket.on('typing_users', onTypingUsers);
 
-    // Clean up event listeners
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
@@ -141,7 +115,7 @@ export function useSocket() {
   return {
     socket,
     isConnected,
-    lastMessage,   
+    lastMessage,
     messages,
     users,
     typingUsers,
