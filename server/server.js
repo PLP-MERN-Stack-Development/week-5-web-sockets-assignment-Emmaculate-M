@@ -25,7 +25,7 @@ const io = new Server(server, {
     origin: [
       process.env.CLIENT_URL,
       'http://localhost:3000',
-      'https://my-chatapp01-frontend-ff45ejhdg-emmaculates-projects.vercel.app'
+      'https://my-chatapp01-frontend.vercel.app/'
     ],
     methods: ['GET', 'POST'],
     credentials: true,
@@ -39,7 +39,7 @@ app.use(cors({
   origin: [
     process.env.CLIENT_URL,
     'http://localhost:3000',
-    'https://my-chatapp01-frontend-ff45ejhdg-emmaculates-projects.vercel.app'
+    'https://my-chatapp01-frontend.vercel.app/'
   ],
   credentials: true,
 }));
