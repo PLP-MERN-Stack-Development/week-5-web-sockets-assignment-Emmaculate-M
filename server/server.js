@@ -24,28 +24,30 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('Connected to MongoDB Atlas'))
 .catch((err) => console.error('MongoDB connection error:', err));
 
-// Setup server and socket
+// Setup server and socket 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: [
       process.env.CLIENT_URL,
       'http://localhost:3000',
-      'https://my-chatapp01-frontend.vercel.app/'
+      'https://my-chatapp01-frontend.vercel.app' //  Removed trailing slash
     ],
     methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true,
+    allowedHeaders: ['Content-Type'], //  Added to ensure CORS headers are handled
   },
-   pingInterval: 25000,  
+  pingInterval: 25000,
   pingTimeout: 60000
 });
+
 
 // Enable CORS for API routes
 app.use(cors({
   origin: [
     process.env.CLIENT_URL,
     'http://localhost:3000',
-    'https://my-chatapp01-frontend.vercel.app/'
+    'https://my-chatapp01-frontend.vercel.app'
   ],
   credentials: true,
 }));
